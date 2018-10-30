@@ -1,0 +1,741 @@
+-------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  E:\506\ps2_q2.smcl
+  log type:  smcl
+ opened on:  18 Oct 2018, 18:07:51
+
+. do "C:\Users\123\AppData\Local\Temp\STD31f8_000000.tmp"
+
+. cd E:\506
+E:\506
+
+. *import sasxport OHX_D.XPT,clear
+. *save OHX_D
+. *import sasxport DEMO_D.XPT,clear
+. *save DEMO_D
+. *clear
+. 
+. * a
+. ** merge data
+. use DEMO_D.dta
+
+. merge 1:1 seqn using OHX_D.dta
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                         2,043
+        from master                     2,043  (_merge==1)
+        from using                          0  (_merge==2)
+
+    matched                             8,305  (_merge==3)
+    -----------------------------------------
+
+. 
+. 
+. * b
+. ** delete the missing data
+. mvdecode ohx04htc, mv(9=.)
+    ohx04htc: 5 missing values generated
+
+. drop if missing(ohx04htc)
+(2,666 observations deleted)
+
+. 
+. ** change values into 1 and 0
+. replace ohx04htc=2 if ohx04htc==5
+(46 real changes made)
+
+. replace ohx04htc=0 if ohx04htc==2|ohx04htc==4
+(6,720 real changes made)
+
+. 
+. ** do logistic regression
+. logit ohx04htc ridagemn
+
+Iteration 0:   log likelihood = -2881.6973  
+Iteration 1:   log likelihood = -2107.4429  
+Iteration 2:   log likelihood = -962.00048  
+Iteration 3:   log likelihood = -765.23661  
+Iteration 4:   log likelihood = -757.79738  
+Iteration 5:   log likelihood = -757.77236  
+Iteration 6:   log likelihood = -757.77236  
+
+Logistic regression                             Number of obs     =      7,563
+                                                LR chi2(1)        =    4247.85
+                                                Prob > chi2       =     0.0000
+Log likelihood = -757.77236                     Pseudo R2         =     0.7370
+
+------------------------------------------------------------------------------
+    ohx04htc |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+    ridagemn |  -.0696778   .0025658   -27.16   0.000    -.0747067   -.0646489
+       _cons |   8.359362    .323495    25.84   0.000     7.725324    8.993401
+------------------------------------------------------------------------------
+Note: 3168 failures and 0 successes completely determined.
+
+. 
+. ** get age of 25, 50, 75 percentile
+. gen age_25=round((log(0.25/0.75)-8.359362)/(-0.0696778))
+
+. gen age_50=round((log(0.5/0.5)-8.359362)/(-0.0696778))
+
+. gen age_75=round((log(0.75/0.25)-8.359362)/(-0.0696778))
+
+. 
+. ** Choose a range of representative age values by taking the floor (in years)
+>  of 
+. ** the 25%-ile and the ceiling (in years) of the 75%-ile.
+. gen year_75=ceil(age_25/12)
+
+. gen year_25=floor(age_75/12)
+
+. display(year_75)
+12
+
+. display(year_25)
+8
+
+. 
+. *** The range of ages is 8:12 (in year).
+. 
+. 
+. * c
+. ** 1
+. logit ohx04htc ridagemn
+
+Iteration 0:   log likelihood = -2881.6973  
+Iteration 1:   log likelihood = -2107.4429  
+Iteration 2:   log likelihood = -962.00048  
+Iteration 3:   log likelihood = -765.23661  
+Iteration 4:   log likelihood = -757.79738  
+Iteration 5:   log likelihood = -757.77236  
+Iteration 6:   log likelihood = -757.77236  
+
+Logistic regression                             Number of obs     =      7,563
+                                                LR chi2(1)        =    4247.85
+                                                Prob > chi2       =     0.0000
+Log likelihood = -757.77236                     Pseudo R2         =     0.7370
+
+------------------------------------------------------------------------------
+    ohx04htc |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+    ridagemn |  -.0696778   .0025658   -27.16   0.000    -.0747067   -.0646489
+       _cons |   8.359362    .323495    25.84   0.000     7.725324    8.993401
+------------------------------------------------------------------------------
+Note: 3168 failures and 0 successes completely determined.
+
+. estat ic
+
+Akaike's information criterion and Bayesian information criterion
+
+-----------------------------------------------------------------------------
+       Model |        Obs  ll(null)  ll(model)      df         AIC        BIC
+-------------+---------------------------------------------------------------
+           . |      7,563 -2881.697  -757.7724       2    1519.545   1533.407
+-----------------------------------------------------------------------------
+               Note: N=Obs used in calculating BIC; see [R] BIC note.
+
+. logit ohx04htc ridagemn i.riagendr
+
+Iteration 0:   log likelihood = -2881.6973  
+Iteration 1:   log likelihood = -2107.4296  
+Iteration 2:   log likelihood = -977.47531  
+Iteration 3:   log likelihood = -767.29902  
+Iteration 4:   log likelihood = -757.68317  
+Iteration 5:   log likelihood = -757.63087  
+Iteration 6:   log likelihood = -757.63086  
+
+Logistic regression                             Number of obs     =      7,563
+                                                LR chi2(2)        =    4248.13
+                                                Prob > chi2       =     0.0000
+Log likelihood = -757.63086                     Pseudo R2         =     0.7371
+
+------------------------------------------------------------------------------
+    ohx04htc |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+    ridagemn |  -.0696983   .0025674   -27.15   0.000    -.0747302   -.0646663
+  2.riagendr |   -.070195   .1319718    -0.53   0.595    -.3288549    .1884649
+       _cons |   8.397414   .3320908    25.29   0.000     7.746528      9.0483
+------------------------------------------------------------------------------
+Note: 3172 failures and 0 successes completely determined.
+
+. estat ic
+
+Akaike's information criterion and Bayesian information criterion
+
+-----------------------------------------------------------------------------
+       Model |        Obs  ll(null)  ll(model)      df         AIC        BIC
+-------------+---------------------------------------------------------------
+           . |      7,563 -2881.697  -757.6309       3    1521.262   1542.055
+-----------------------------------------------------------------------------
+               Note: N=Obs used in calculating BIC; see [R] BIC note.
+
+. *** We can see the BIC of this model is 1542.055, which is bigger than BIC of
+>  
+. *** the model in part b(1533.407). So, we don't retain it.
+. 
+. ** 2
+. *** create indicators of different categories:
+. replace ridreth1=2 if ridreth1==5
+(358 real changes made)
+
+. label define ridreth1 3 "NH White", 
+
+. label define ridreth1 4 "NH Black", add
+
+. label define ridreth1 1 "Mex American", add
+
+. label define ridreth1 2 "Other race/ethn", add
+
+. 
+. *** compare the BIC of the model before and after the addition of indicator 
+. *** Mexico American:
+. preserve
+
+. replace ridreth1=0 if ridreth1==2|ridreth1==3|ridreth1==4
+(5,706 real changes made)
+
+. logit ohx04htc ridagemn i.ridreth1
+
+Iteration 0:   log likelihood = -2881.6973  
+Iteration 1:   log likelihood = -2107.3637  
+Iteration 2:   log likelihood = -962.18045  
+Iteration 3:   log likelihood = -765.35902  
+Iteration 4:   log likelihood = -757.77196  
+Iteration 5:   log likelihood = -757.74573  
+Iteration 6:   log likelihood = -757.74573  
+
+Logistic regression                             Number of obs     =      7,563
+                                                LR chi2(2)        =    4247.90
+                                                Prob > chi2       =     0.0000
+Log likelihood = -757.74573                     Pseudo R2         =     0.7370
+
+------------------------------------------------------------------------------
+    ohx04htc |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+    ridagemn |  -.0696808   .0025659   -27.16   0.000    -.0747099   -.0646516
+  1.ridreth1 |  -.0320335   .1388088    -0.23   0.817    -.3040936    .2400267
+       _cons |   8.370769   .3274594    25.56   0.000     7.728961    9.012578
+------------------------------------------------------------------------------
+Note: 3169 failures and 0 successes completely determined.
+
+. estat ic
+
+Akaike's information criterion and Bayesian information criterion
+
+-----------------------------------------------------------------------------
+       Model |        Obs  ll(null)  ll(model)      df         AIC        BIC
+-------------+---------------------------------------------------------------
+           . |      7,563 -2881.697  -757.7457       3    1521.491   1542.285
+-----------------------------------------------------------------------------
+               Note: N=Obs used in calculating BIC; see [R] BIC note.
+
+. *** The BIC of category American Mexico is 1542.285, 
+. *** which doesn't improve the last BIC(1533.407). So, we don't retain it.
+. restore
+
+. 
+. *** compare the BIC of the model before and after the addition of indicator 
+. *** Non-Hispanic Black:
+. preserve
+
+. replace ridreth1=0 if ridreth==1|ridreth==2|ridreth==3
+(5,641 real changes made)
+
+. replace ridreth1=1 if ridreth==4
+(2,041 real changes made)
+
+. logit ohx04htc ridagemn i.ridreth1
+
+Iteration 0:   log likelihood = -2881.6973  
+Iteration 1:   log likelihood = -2103.4944  
+Iteration 2:   log likelihood = -960.65791  
+Iteration 3:   log likelihood = -759.97969  
+Iteration 4:   log likelihood =  -751.2846  
+Iteration 5:   log likelihood = -751.24373  
+Iteration 6:   log likelihood = -751.24372  
+
+Logistic regression                             Number of obs     =      7,563
+                                                LR chi2(2)        =    4260.91
+                                                Prob > chi2       =     0.0000
+Log likelihood = -751.24372                     Pseudo R2         =     0.7393
+
+------------------------------------------------------------------------------
+    ohx04htc |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+    ridagemn |  -.0700749   .0025924   -27.03   0.000    -.0751559   -.0649938
+  1.ridreth1 |  -.5207269   .1452682    -3.58   0.000    -.8054474   -.2360065
+       _cons |   8.567218   .3342035    25.63   0.000     7.912191    9.222244
+------------------------------------------------------------------------------
+Note: 3176 failures and 0 successes completely determined.
+
+. estat ic
+
+Akaike's information criterion and Bayesian information criterion
+
+-----------------------------------------------------------------------------
+       Model |        Obs  ll(null)  ll(model)      df         AIC        BIC
+-------------+---------------------------------------------------------------
+           . |      7,563 -2881.697  -751.2437       3    1508.487   1529.281
+-----------------------------------------------------------------------------
+               Note: N=Obs used in calculating BIC; see [R] BIC note.
+
+. *** The BIC of category Non-Hispanic Black is 1529.281, 
+. *** which improves the last BIC(1533.407). So, we retain it.
+. restore
+
+. 
+. *** compare the BIC of the model before and after the addition of indicator 
+. *** Other race/ethn:
+. preserve
+
+. replace ridreth1=0 if ridreth==1|ridreth==3|ridreth==4
+(7,090 real changes made)
+
+. replace ridreth1=1 if ridreth==2
+(592 real changes made)
+
+. logit ohx04htc ridagemn i.ridreth1
+
+Iteration 0:   log likelihood = -2881.6973  
+Iteration 1:   log likelihood = -2107.3894  
+Iteration 2:   log likelihood = -965.66294  
+Iteration 3:   log likelihood = -765.79152  
+Iteration 4:   log likelihood = -757.60276  
+Iteration 5:   log likelihood = -757.56933  
+Iteration 6:   log likelihood = -757.56932  
+
+Logistic regression                             Number of obs     =      7,563
+                                                LR chi2(2)        =    4248.26
+                                                Prob > chi2       =     0.0000
+Log likelihood = -757.56932                     Pseudo R2         =     0.7371
+
+------------------------------------------------------------------------------
+    ohx04htc |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+    ridagemn |  -.0697415   .0025696   -27.14   0.000    -.0747777   -.0647052
+  1.ridreth1 |  -.1442089   .2264922    -0.64   0.524    -.5881255    .2997076
+       _cons |   8.380773   .3257013    25.73   0.000     7.742411    9.019136
+------------------------------------------------------------------------------
+Note: 3169 failures and 0 successes completely determined.
+
+. estat ic
+
+Akaike's information criterion and Bayesian information criterion
+
+-----------------------------------------------------------------------------
+       Model |        Obs  ll(null)  ll(model)      df         AIC        BIC
+-------------+---------------------------------------------------------------
+           . |      7,563 -2881.697  -757.5693       3    1521.139   1541.932
+-----------------------------------------------------------------------------
+               Note: N=Obs used in calculating BIC; see [R] BIC note.
+
+. *** The BIC of category Other is 1541.932, which doesn't improve 
+. *** the last BIC(1533.407). So, we don't retain it.
+. restore
+
+. 
+. ** 3
+. *** We add the predictor for category Non-Hispanic Black
+. replace ridreth1=0 if ridreth==1|ridreth==2|ridreth==3
+(5,641 real changes made)
+
+. replace ridreth1=1 if ridreth==4
+(2,041 real changes made)
+
+. gen race_NH_black=ridreth1
+
+. 
+. *** compare the BIC before and after the addition of the variable poverty inc
+> ome ratio:
+. drop if missing(indfmpir)
+(327 observations deleted)
+
+. logit ohx04htc ridagemn i.race_NH_black indfmpir
+
+Iteration 0:   log likelihood =  -2767.303  
+Iteration 1:   log likelihood = -2018.4446  
+Iteration 2:   log likelihood =  -943.5576  
+Iteration 3:   log likelihood = -727.20916  
+Iteration 4:   log likelihood = -713.72745  
+Iteration 5:   log likelihood = -713.67086  
+Iteration 6:   log likelihood = -713.67085  
+
+Logistic regression                             Number of obs     =      7,246
+                                                LR chi2(3)        =    4107.26
+                                                Prob > chi2       =     0.0000
+Log likelihood = -713.67085                     Pseudo R2         =     0.7421
+
+-------------------------------------------------------------------------------
+--
+       ohx04htc |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interva
+> l]
+----------------+--------------------------------------------------------------
+--
+       ridagemn |  -.0713747   .0027063   -26.37   0.000    -.0766789   -.06607
+> 04
+1.race_NH_black |  -.4949803   .1489242    -3.32   0.001    -.7868664   -.20309
+> 43
+       indfmpir |   .1190729    .045378     2.62   0.009     .0301337    .20801
+> 21
+          _cons |   8.460287   .3510302    24.10   0.000     7.772281    9.1482
+> 94
+-------------------------------------------------------------------------------
+--
+Note: 3063 failures and 0 successes completely determined.
+
+. estat ic
+
+Akaike's information criterion and Bayesian information criterion
+
+-----------------------------------------------------------------------------
+       Model |        Obs  ll(null)  ll(model)      df         AIC        BIC
+-------------+---------------------------------------------------------------
+           . |      7,246 -2767.303  -713.6708       4    1435.342   1462.895
+-----------------------------------------------------------------------------
+               Note: N=Obs used in calculating BIC; see [R] BIC note.
+
+. *** The BIC of it with the addition variable poverty income ratio is 1462.895
+> , 
+. *** which improves the last BIC(1529.281). So, we retain it.
+. 
+. *** Finalmodel: logit ohx04htc ~ ridagemn i.race_NH_black indfmpir ***
+. 
+. 
+. * d
+. *** change the age from month to year
+. gen age_year=trunc(ridagemn/12)
+(109 missing values generated)
+
+. 
+. *** do logistic regression of the final model
+. quietly logit ohx04htc age_year i.race_NH_black indfmpir
+
+. 
+. ** 1 Adjusted predctions at the mean (for other values) at each of the repres
+> entative ages:
+. margins, at(age_year=(8(1)11)) atmeans
+
+Adjusted predictions                            Number of obs     =      7,246
+Model VCE    : OIM
+
+Expression   : Pr(ohx04htc), predict()
+
+1._at        : age_year        =           8
+               0.race_NH_~k    =    .7281259 (mean)
+               1.race_NH_~k    =    .2718741 (mean)
+               indfmpir        =    2.463474 (mean)
+
+2._at        : age_year        =           9
+               0.race_NH_~k    =    .7281259 (mean)
+               1.race_NH_~k    =    .2718741 (mean)
+               indfmpir        =    2.463474 (mean)
+
+3._at        : age_year        =          10
+               0.race_NH_~k    =    .7281259 (mean)
+               1.race_NH_~k    =    .2718741 (mean)
+               indfmpir        =    2.463474 (mean)
+
+4._at        : age_year        =          11
+               0.race_NH_~k    =    .7281259 (mean)
+               1.race_NH_~k    =    .2718741 (mean)
+               indfmpir        =    2.463474 (mean)
+
+------------------------------------------------------------------------------
+             |            Delta-method
+             |     Margin   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+         _at |
+          1  |   .8002975   .0147568    54.23   0.000     .7713746    .8292204
+          2  |   .6300011   .0174287    36.15   0.000     .5958414    .6641608
+          3  |   .4197714   .0168052    24.98   0.000     .3868338    .4527091
+          4  |   .2351161   .0139717    16.83   0.000     .2077319    .2625002
+------------------------------------------------------------------------------
+
+. marginsplot
+
+  Variables that uniquely identify margins: age_year
+
+. 
+. ** 2
+. *** The marginal effects at the mean of variable race_NH_black at the same re
+> presentative ages:
+. margins, at(age_year=(8(1)11)) dydx(race_NH_black) atmeans
+
+Conditional marginal effects                    Number of obs     =      7,246
+Model VCE    : OIM
+
+Expression   : Pr(ohx04htc), predict()
+dy/dx w.r.t. : 1.race_NH_black
+
+1._at        : age_year        =           8
+               0.race_NH_~k    =    .7281259 (mean)
+               1.race_NH_~k    =    .2718741 (mean)
+               indfmpir        =    2.463474 (mean)
+
+2._at        : age_year        =           9
+               0.race_NH_~k    =    .7281259 (mean)
+               1.race_NH_~k    =    .2718741 (mean)
+               indfmpir        =    2.463474 (mean)
+
+3._at        : age_year        =          10
+               0.race_NH_~k    =    .7281259 (mean)
+               1.race_NH_~k    =    .2718741 (mean)
+               indfmpir        =    2.463474 (mean)
+
+4._at        : age_year        =          11
+               0.race_NH_~k    =    .7281259 (mean)
+               1.race_NH_~k    =    .2718741 (mean)
+               indfmpir        =    2.463474 (mean)
+
+-------------------------------------------------------------------------------
+---
+                 |            Delta-method
+                 |      dy/dx   Std. Err.      z    P>|z|     [95% Conf. Interv
+> al]
+-----------------+-------------------------------------------------------------
+---
+0.race_NH_black  |  (base outcome)
+-----------------+-------------------------------------------------------------
+---
+1.race_NH_black  |
+             _at |
+              1  |  -.0822218   .0267746    -3.07   0.002    -.1346989   -.0297
+> 446
+              2  |  -.1149485   .0358208    -3.21   0.001    -.1851558   -.0447
+> 411
+              3  |  -.1146697   .0343608    -3.34   0.001    -.1820157   -.0473
+> 236
+              4  |   -.081685    .023902    -3.42   0.001    -.1285322   -.0348
+> 379
+-------------------------------------------------------------------------------
+---
+Note: dy/dx for factor levels is the discrete change from the base level.
+
+. marginsplot
+
+  Variables that uniquely identify margins: age_year
+
+. 
+. *** The marginal effects at the mean of variable poverty income ratio at the 
+> same representative ages:
+. margins, at(age_year=(8(1)11)) dydx(indfmpir) atmeans
+
+Conditional marginal effects                    Number of obs     =      7,246
+Model VCE    : OIM
+
+Expression   : Pr(ohx04htc), predict()
+dy/dx w.r.t. : indfmpir
+
+1._at        : age_year        =           8
+               0.race_NH_~k    =    .7281259 (mean)
+               1.race_NH_~k    =    .2718741 (mean)
+               indfmpir        =    2.463474 (mean)
+
+2._at        : age_year        =           9
+               0.race_NH_~k    =    .7281259 (mean)
+               1.race_NH_~k    =    .2718741 (mean)
+               indfmpir        =    2.463474 (mean)
+
+3._at        : age_year        =          10
+               0.race_NH_~k    =    .7281259 (mean)
+               1.race_NH_~k    =    .2718741 (mean)
+               indfmpir        =    2.463474 (mean)
+
+4._at        : age_year        =          11
+               0.race_NH_~k    =    .7281259 (mean)
+               1.race_NH_~k    =    .2718741 (mean)
+               indfmpir        =    2.463474 (mean)
+
+------------------------------------------------------------------------------
+             |            Delta-method
+             |      dy/dx   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+indfmpir     |
+         _at |
+          1  |   .0180204   .0071129     2.53   0.011     .0040794    .0319614
+          2  |   .0262828   .0104739     2.51   0.012     .0057542    .0468113
+          3  |   .0274626   .0110801     2.48   0.013     .0057461    .0491791
+          4  |   .0202772   .0082538     2.46   0.014     .0040999    .0364544
+------------------------------------------------------------------------------
+
+. marginsplot
+
+  Variables that uniquely identify margins: age_year
+
+. 
+. ** 3
+. *** The average marginal effect of varialbal race_NH_black at the representat
+> ive ages:
+. margins, at(age_year=(8(1)11)) dydx(race_NH_black)
+
+Average marginal effects                        Number of obs     =      7,246
+Model VCE    : OIM
+
+Expression   : Pr(ohx04htc), predict()
+dy/dx w.r.t. : 1.race_NH_black
+
+1._at        : age_year        =           8
+
+2._at        : age_year        =           9
+
+3._at        : age_year        =          10
+
+4._at        : age_year        =          11
+
+-------------------------------------------------------------------------------
+---
+                 |            Delta-method
+                 |      dy/dx   Std. Err.      z    P>|z|     [95% Conf. Interv
+> al]
+-----------------+-------------------------------------------------------------
+---
+0.race_NH_black  |  (base outcome)
+-----------------+-------------------------------------------------------------
+---
+1.race_NH_black  |
+             _at |
+              1  |  -.0821973   .0267355    -3.07   0.002    -.1345979   -.0297
+> 967
+              2  |  -.1141718   .0356303    -3.20   0.001     -.184006   -.0443
+> 376
+              3  |  -.1138707   .0341971    -3.33   0.001    -.1808958   -.0468
+> 455
+              4  |  -.0816358   .0239028    -3.42   0.001    -.1284844   -.0347
+> 871
+-------------------------------------------------------------------------------
+---
+Note: dy/dx for factor levels is the discrete change from the base level.
+
+. marginsplot
+
+  Variables that uniquely identify margins: age_year
+
+. 
+. *** The average marginal effect of varialbal poverty income ratio at the repr
+> esentative ages:
+. margins, at(age_year=(8(1)11)) dydx(indfmpir)
+
+Average marginal effects                        Number of obs     =      7,246
+Model VCE    : OIM
+
+Expression   : Pr(ohx04htc), predict()
+dy/dx w.r.t. : indfmpir
+
+1._at        : age_year        =           8
+
+2._at        : age_year        =           9
+
+3._at        : age_year        =          10
+
+4._at        : age_year        =          11
+
+------------------------------------------------------------------------------
+             |            Delta-method
+             |      dy/dx   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+indfmpir     |
+         _at |
+          1  |   .0180265   .0071269     2.53   0.011      .004058     .031995
+          2  |   .0258182   .0101677     2.54   0.011     .0058899    .0457466
+          3  |   .0269413   .0107038     2.52   0.012     .0059623    .0479203
+          4  |   .0202209   .0081926     2.47   0.014     .0041636    .0362781
+------------------------------------------------------------------------------
+
+. marginsplot
+
+  Variables that uniquely identify margins: age_year
+
+. 
+. 
+. * e
+. *** Refit final model from part c using svy
+. svyset sdmvpsu [pweight=wtmec2yr],strata(sdmvstra) vce(linearized)
+
+      pweight: wtmec2yr
+          VCE: linearized
+  Single unit: missing
+     Strata 1: sdmvstra
+         SU 1: sdmvpsu
+        FPC 1: <zero>
+
+. svy: logit ohx04htc age_year i.race_NH_black indfmpir
+(running logit on estimation sample)
+
+Survey: Logistic regression
+
+Number of strata   =        15                Number of obs     =        7,246
+Number of PSUs     =        30                Population size   =  240,124,554
+                                              Design df         =           15
+                                              F(   3,     13)   =        25.57
+                                              Prob > F          =       0.0000
+
+-------------------------------------------------------------------------------
+--
+                |             Linearized
+       ohx04htc |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interva
+> l]
+----------------+--------------------------------------------------------------
+--
+       age_year |  -.7427951   .0849016    -8.75   0.000    -.9237585   -.56183
+> 17
+1.race_NH_black |    -.52016   .1460575    -3.56   0.003    -.8314743   -.20884
+> 58
+       indfmpir |   .0763056   .0535443     1.43   0.175    -.0378213    .19043
+> 26
+          _cons |   7.180444   .8126614     8.84   0.000     5.448297     8.912
+> 59
+-------------------------------------------------------------------------------
+--
+Note: 2805 failures and 0 successes completely determined.
+
+. est store m2
+
+. 
+. logit ohx04htc age_year race_NH_black indfmpir
+
+Iteration 0:   log likelihood =  -2767.303  
+Iteration 1:   log likelihood = -2018.8121  
+Iteration 2:   log likelihood = -944.79811  
+Iteration 3:   log likelihood = -728.33122  
+Iteration 4:   log likelihood = -714.71743  
+Iteration 5:   log likelihood = -714.66155  
+Iteration 6:   log likelihood = -714.66154  
+
+Logistic regression                             Number of obs     =      7,246
+                                                LR chi2(3)        =    4105.28
+                                                Prob > chi2       =     0.0000
+Log likelihood = -714.66154                     Pseudo R2         =     0.7417
+
+-------------------------------------------------------------------------------
+     ohx04htc |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+--------------+----------------------------------------------------------------
+     age_year |  -.8559332   .0324434   -26.38   0.000    -.9195211   -.7923453
+race_NH_black |   -.482611    .148768    -3.24   0.001     -.774191    -.191031
+     indfmpir |   .1127534    .045292     2.49   0.013     .0239827     .201524
+        _cons |   8.089065   .3383906    23.90   0.000     7.425832    8.752298
+-------------------------------------------------------------------------------
+Note: 3058 failures and 0 successes completely determined.
+
+. est store m1
+
+. 
+. *** We can tell from the two tables that the absolute value of the coefficien
+> ts
+. *** of the svy model are smaller than that of the original final model.
+. *** Besides, the standard errors of svy model are bigger than that of the ori
+> ginal final model.
+. *** In addition, the p-value of every coefficients of svy model are larger th
+> an that of the 
+. *** original final model.
+. *** Finally, the confidence intervals of svy model are longer than that of th
+> e original model.
+. 
+end of do-file
+
+. log close
+      name:  <unnamed>
+       log:  E:\506\ps2_q2.smcl
+  log type:  smcl
+ closed on:  18 Oct 2018, 18:08:24
+-------------------------------------------------------------------------------
