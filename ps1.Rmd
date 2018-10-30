@@ -1,0 +1,116 @@
+---
+title: "506 HW1"
+author: "Fang Zhou"
+date: "September 30, 2018"
+output:
+  word_document: default
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+# Q2
+```{r}
+source('ps1_q2.R')
+source('ps1_q3.R')
+```
+
+## a
+### The airlines that were responsible for at least 1% of the flights departing any of the three NYC airports between January 1 and October 31, 2013:
+```{r}
+cap_title1 = '**Table 1.** *Airlines responsible for at least 1% between January 1 and October 31.*'
+knitr::kable(al13_at_least_0.01,digit=4,caption=cap_title1)
+```
+
+## b
+```{r}
+cap_title2 = '**Table 2.** *Percent and change of annual flights in 2013&2014.*'
+knitr::kable(AL_13_14,digit=3,caption = cap_title2)
+```
+
+### Airline shows the largest increase:
+```{r}
+al_13_14[which.max(al_13_14$change),1]
+```
+
+### Airline shows the largest decrease:
+```{r}
+al_13_14[which.min(al_13_14$change),1]
+```
+
+### Why do some airlines show an increase in the percent of flights but a decrease in the number of flights? 
+### Because in 2014, the Endeavor Air Inc. didn't have any flights at NYC airport. There are only 10 carriers left and thus some airlines have larger proportion than 2013 although they have fewer flights.
+
+## c
+```{r}
+cap_title3='**Table 3.** *Percents and CIs of flights each airline is responsible for at three NYC airports.*'
+knitr::kable(FL_13_14,digit=4,caption = cap_title3)
+```
+
+### Largest carrier at airport EWR:
+```{r}
+fl_EWR[which.max(fl_EWR$percent.y),1]
+```
+
+### Largest carrier at airport JFK:
+```{r}
+fl_JFK[which.max(fl_JFK$percent.y),1]
+```
+
+### Largest carrier at airport LGA:
+```{r}
+fl_LGA[which.max(fl_LGA$percent.y),1]
+```
+
+# Q3
+## a
+### Percent of homes have stucco construction as the major outside wall material within each division
+```{r}
+cap_title4='**Table 4.** *Percent of homes have stucco construction as the major outside wall material within each division.*'
+knitr::kable(div_stucco,digit=4,caption = cap_title4)
+```
+
+### division with highest porportion
+```{r}
+div_stucco[which.max(div_stucco$percent),1]
+```
+
+### division with lowest porportion
+```{r}
+div_stucco[which.min(div_stucco$percent),1]
+```
+
+### From the plot below we can easily see which divisions have the highest and lowest percent. 
+```{r}
+plot(div_stucco,main='Fig.1 Plot of the percent within each division')
+```
+
+## b
+### Average total electricity usage in kilowatt hours in each division
+```{r}
+cap_title5='**Table 5.** *Average total electricity usage in KWH in each division.*'
+knitr::kable(elec_sum,caption = cap_title5)
+```
+
+### Average total electricity usage in KWH in each division at urban and rural areas
+```{r}
+cap_title6='**Table 6.** *Average total electricity usage in KWH in each division stratified by urban and rural status.*'
+knitr::kable(elec_UR_sum,caption = cap_title6)
+```
+
+## c
+### Division has the largest disparity between urban and rural areas in terms of the proportion of homes with internet access
+```{r}
+cap_title7='**Table 7.** *Proportion of homes with Internet Access in each division stratified by urban and rural status.*'
+knitr::kable(UR_IT,digit=4,caption = cap_title7)
+```
+
+### Plot of the disparity between urban and rural areas in different divisions
+```{r}
+plot(abs(disp),main='Fig.2 Disparity between urban and rural areas',xlab='division',ylab='disparity')
+```
+
+### From Fig.2 which shows the disparity in different divisions we can easily see that Divison 9 has the largest disparity between urban and rural areas. We can use R code to test it:
+```{r}
+which.max(abs(disp))
+```
