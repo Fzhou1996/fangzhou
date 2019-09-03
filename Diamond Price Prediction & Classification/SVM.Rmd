@@ -1,0 +1,325 @@
+---
+title: "SVM"
+author: "Fang Zhou"
+date: "April 19, 2019"
+output:
+  word_document: default
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Part I: Data Processing
+```{r}
+diamonds=read.csv('diamonds.csv')
+### delete the id and set the price as factors based on the range 3500 and 10000
+diamonds$price = as.factor(ifelse(diamonds$price>=3500&diamonds$price<=10000,1,ifelse(diamonds$price>10000,2,0)))
+diamonds=diamonds[,-1]
+```
+
+```{r}
+### change the categorical variables into numerical variables
+diamonds$cut=as.character(diamonds$cut)
+diamonds$cut[which(diamonds$cut=='Fair')]= 1
+diamonds$cut[which(diamonds$cut=='Good')]= 2
+diamonds$cut[which(diamonds$cut=='Very Good')]= 3
+diamonds$cut[which(diamonds$cut=='Premium')]= 4
+diamonds$cut[which(diamonds$cut=='Ideal')]= 5
+diamonds$cut=as.numeric(diamonds$cut)
+diamonds$color=as.character(diamonds$color)
+diamonds$color[which(diamonds$color=='D')]= 7
+diamonds$color[which(diamonds$color=='E')]= 6
+diamonds$color[which(diamonds$color=='F')]= 5
+diamonds$color[which(diamonds$color=='G')]= 4
+diamonds$color[which(diamonds$color=='H')]= 3
+diamonds$color[which(diamonds$color=='I')]= 2
+diamonds$color[which(diamonds$color=='J')]= 1
+diamonds$color=as.numeric(diamonds$color)
+diamonds$clarity=as.character(diamonds$clarity)
+diamonds$clarity[which(diamonds$clarity=='I1')]=1
+diamonds$clarity[which(diamonds$clarity=='SI2')]=2
+diamonds$clarity[which(diamonds$clarity=='SI1')]=3
+diamonds$clarity[which(diamonds$clarity=='VS2')]=4
+diamonds$clarity[which(diamonds$clarity=='VS1')]=5
+diamonds$clarity[which(diamonds$clarity=='VVS2')]=6
+diamonds$clarity[which(diamonds$clarity=='VVS1')]=7
+diamonds$clarity[which(diamonds$clarity=='IF')]=8
+diamonds$clarity=as.numeric(diamonds$clarity)
+```
+
+After processing the data, we then can select the parameters of svm and choose a best model.
+
+### Part II: Select Model
+```{r load packages}
+library(e1071)
+library(ggplot2)
+```
+
+Firstly, we split the data set into training set(90%) and test set(10%).
+```{r split data}
+set.seed(10)
+index=sample(dim(diamonds)[1],0.9*dim(diamonds)[1],replace=F)
+train=diamonds[index,]
+test=diamonds[-index,]
+```
+
+Then, we could train the model and compute its test errors with different parameters.
+```{r}
+Cost=c(0.01,0.1,1,10,100)
+Gamma=c(1,2,3,5,10)
+```
+
+Since running the source code need a lot of time (for the size of the data set and the complexity of svm multi class model), we save our variables in a RData file and thus to avoid running it again. The source code are in the appendix.
+
+```{r}
+load("E:/503/project_data.RData")
+```
+
+We can see based on the no-scaled diamond data set, the best parameters for 'linear', 'polynomial' and 'radial' kernel are shown in Table 1.
+
+```{r}
+kernel=c('linear','polynomial','radial')
+TE=c(min(linear_error),min(poly_error),min(radial_error1))
+cost=c(10,100,1)
+gamma=c(0.111,0.111,1)
+degree=c(NA,3,NA)
+SVM_Error=cbind.data.frame(kernel,cost,gamma,degree,TE)
+cap_title1='**Table 1.** *SVM Error*'
+knitr::kable(SVM_Error,caption = cap_title1)
+```
+
+From Table 1, we can choose radial kernel svm model with cost = 1, gamma = 1 as our best model.
+
+Then We use the scaled diamond data set to fit the SVM model, the best parameters for 'linear', 'polynomial' and 'radial' kernel of the scaled data set are shown in Table 2.
+```{r}
+kernel=c('linear','polynomial','radial')
+TE=c(min(linear_error_scale),min(poly_error_scale),min(radial_error_scale))
+cost=c(1,10,1)
+gamma=c(0.111,0.111,1)
+degree=c(NA,3,NA)
+SVM_Error_scale=cbind.data.frame(kernel,cost,gamma,degree,TE)
+cap_title2='**Table 2.** *SVM Error of Scaled Data*'
+knitr::kable(SVM_Error_scale,caption = cap_title2)
+```
+
+From Table 2, we can choose radial kernel svm model with cost = 1, gamma = 1 as our best model for the scaled data. The test error rate is 0.0356, which is lower than the test error of no-scaled data set.
+
+Finally, as we know that the price of a diamond mainly depends on the '4C' metrics, that is carat, cut, clarity and color. So, if we only use these four variables to classify the price of a diamond, would the performance of the model be improved? 
+The best performances for SVM models with different kernels are shown in Table 3, which are build only by the scaled 4 variables. 
+
+```{r}
+kernel=c('linear','polynomial','radial')
+TE=c(min(linear_error_4c),min(poly_error_4c),min(radial_error_4c))
+cost=c(10,10,1)
+gamma=c(0.25,0.25,1)
+degree=c(NA,3,NA)
+SVM_Error_4C=cbind.data.frame(kernel,cost,gamma,degree,TE)
+cap_title3='**Table 3.** *SVM Error of Scaled Data by 4C*'
+knitr::kable(SVM_Error_4C,caption = cap_title3)
+```
+
+From Table 3, we choose radial kernel svm model with cost = 1, gamma = 1 by the '4C' variables as our best model for the scaled data. The test error rate is 0.0315, which is even lower than the test error of scaled data set.
+
+
+In conclusion, the SVM model of radial kernel with cost = 1, gamma = 1 built by the scaled variables: carat, cut, clarity and color is our best SVM model for the diamonds data set.
+
+Then we can ust our best SVM model to get the F1 score Table for test set and training set. They're shown below as Table 4 and 5. 
+
+```{r}
+f1_score_test_tb
+
+```
+
+```{r}
+cap_title4='**Table 4.** *F1 Score of Training Set*'
+knitr::kable(f1_score_train_tb,caption = cap_title4)
+```
+
+```{r}
+cap_title5='**Table 5.** *F1 Score of Test Set*'
+knitr::kable(f1_score_test_tb,caption = cap_title5)
+```
+
+From the tables above, we can get test error =`r test_error` and training error = `r train_error`.
+
+Finally, we plot the misclassified points for the training set and test set below. We can see that most misclassified points are distributed near the boundary, except for some very high prices (above 10000).
+```{r}
+ggplot(train_mis, aes(x=c(1:length(raw_price)),y=raw_price, color=price_pred)) + geom_point()+geom_hline(aes(yintercept=3500))+geom_hline(aes(yintercept=10000)) + xlab('n')+ggtitle('Misclassified Points in Training Set by SVM')
+```
+
+
+```{r}
+ggplot(test_mis, aes(x=c(1:length(raw_price)),y=raw_price, color=price_pred)) + geom_point()+geom_hline(aes(yintercept=3500))+geom_hline(aes(yintercept=10000)) + xlab('n')+ggtitle('Misclassified Points in Test Set by SVM')
+```
+
+
+```{r}
+SVM=read.csv('svm_train.csv',header = TRUE)
+```
+
+```{r}
+KNN=read.csv('diff_knn_train_tomerge.csv',header = TRUE)
+```
+
+```{r}
+train_dat=merge(SVM,KNN,by='Index',all =TRUE)
+
+```
+
+```{r}
+Boost=read.csv('diff_boost_4c.csv',header = TRUE)
+```
+
+```{r}
+RF=read.csv('diff_rf.csv',header=TRUE)
+```
+
+
+```{r}
+train_error_points=merge(RF,train_dat,by='Index',all=TRUE)
+```
+
+```{r}
+write.csv(train_error_points,file = 'train_error_points.csv')
+```
+
+
+
+
+```{r}
+library(nnet)
+```
+
+```{r}
+mult.cere<-multinom(price~.,data=train)
+```
+```{r}
+summary(mult.cere)
+```
+
+
+```{r}
+mult.cere1<-update(mult.cere,~.-1)#???????????????????????????
+```
+mult.cere2<-update(mult.cere,~.-x1)
+
+mult.cere3<-update(mult.cere,~.-x2)
+
+```{r}
+step.cere = step(mult.cere)
+```
+
+```{r}
+summary(step.cere)
+```
+
+```{r}
+train1=train
+train1$x=(train$x)^2
+train1$y=(train$y)^2
+train1$z=(train$z)^2
+```
+
+```{r}
+multi.cere2=multinom(formula = price ~ carat + cut + color + clarity + depth + 
+    table + x + y + z, data = train1)
+```
+```{r}
+summary(multi.cere2)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+step.cere2=step(multi.cere2)
+```
+
+
+```{r}
+summary(step.cere2)
+```
+
+```{r}
+exp(coef(step.cere2))#??????????????????
+```
+
+```{r}
+cere.pred2<-predict(step.cere2) #?????????
+```
+
+```{r}
+tb=table(train1$price,cere.pred2)
+1-(tb[1,1]+tb[2,2]+tb[3,3])/dim(train1)[1]
+```
+
+```{r}
+test_xyz=test
+test_xyz$x=(test$x)^2
+test_xyz$y=(test$y)^2
+test_xyz$z=(test$z)^2
+```
+
+```{r}
+cere.pred2.test=predict(step.cere2,test_xyz)
+tb.test=table(test$price,cere.pred2.test)
+1-(tb.test[1,1]+tb.test[2,2]+tb.test[3,3])/dim(test_xyz)[1]
+```
+
+
+
+cere.pred
+
+```{r}
+multi.4c=multinom(price~carat+color+cut+clarity,data=train)
+
+```
+
+```{r}
+step.multi.4c=step(multi.4c)
+summary(step.multi.4c)
+```
+
+```{r}
+pred.4c=predict(step.multi.4c)
+```
+
+```{r}
+tb.4c=table(train$price,pred.4c)
+1-(tb.4c[1,1]+tb.4c[2,2]+tb.4c[3,3])/dim(train)[1]
+```
+
+```{r}
+pred.4c.test=predict(step.multi.4c,test)
+tb.4c.test=table(test$price,pred.4c.test)
+1-(tb.4c.test[1,1]+tb.4c.test[2,2]+tb.4c.test[3,3])/dim(test)[1]
+```
+
+```{r}
+
+
+```
+
+

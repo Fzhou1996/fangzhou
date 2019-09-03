@@ -1,0 +1,525 @@
+---
+title: "Group Project"
+author: "Fang Zhou"
+date: "April 5, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(e1071)
+library(ggplot2)
+```
+
+```{r}
+diamonds=read.csv('diamonds.csv')
+### delete the id and x,y,z columns
+diamonds$price = as.factor(ifelse(diamonds$price>=3500&diamonds$price<=10000,1,ifelse(diamonds$price>10000,2,0)))
+diamonds=diamonds[,-1]
+```
+
+```{r}
+### change the categorical variables into numerical variables
+diamonds$cut=as.character(diamonds$cut)
+diamonds$cut[which(diamonds$cut=='Fair')]= 1
+diamonds$cut[which(diamonds$cut=='Good')]= 2
+diamonds$cut[which(diamonds$cut=='Very Good')]= 3
+diamonds$cut[which(diamonds$cut=='Premium')]= 4
+diamonds$cut[which(diamonds$cut=='Ideal')]= 5
+diamonds$cut=as.numeric(diamonds$cut)
+```
+
+```{r}
+diamonds$color=as.character(diamonds$color)
+diamonds$color[which(diamonds$color=='D')]= 7
+diamonds$color[which(diamonds$color=='E')]= 6
+diamonds$color[which(diamonds$color=='F')]= 5
+diamonds$color[which(diamonds$color=='G')]= 4
+diamonds$color[which(diamonds$color=='H')]= 3
+diamonds$color[which(diamonds$color=='I')]= 2
+diamonds$color[which(diamonds$color=='J')]= 1
+diamonds$color=as.numeric(diamonds$color)
+```
+
+```{r}
+diamonds$clarity=as.character(diamonds$clarity)
+diamonds$clarity[which(diamonds$clarity=='I1')]=1
+diamonds$clarity[which(diamonds$clarity=='SI2')]=2
+diamonds$clarity[which(diamonds$clarity=='SI1')]=3
+diamonds$clarity[which(diamonds$clarity=='VS2')]=4
+diamonds$clarity[which(diamonds$clarity=='VS1')]=5
+diamonds$clarity[which(diamonds$clarity=='VVS2')]=6
+diamonds$clarity[which(diamonds$clarity=='VVS1')]=7
+diamonds$clarity[which(diamonds$clarity=='IF')]=8
+diamonds$clarity=as.numeric(diamonds$clarity)
+```
+
+Then all the variables we use to build the model are numerical.
+
+Split the data set to training set and testing set. 
+```{r}
+set.seed(10)
+index=sample(dim(diamonds)[1],0.9*dim(diamonds)[1],replace=F)
+train=diamonds[index,]
+test=diamonds[-index,]
+```
+
+Then, we should select a model.
+
+```{r}
+Cost=c(0.01,0.1,1,10,100)
+Gamma=c(1,2,3,5,10)
+```
+
+Firstly, we choose the linear kernel and compare the test errors with different costs. 
+
+```{r}
+linear_error=rep(0,5)
+for(i in 1:5){
+svm.fit1=svm(price~.,data=train,kernel='linear',cost=Cost[i])
+pred=predict(svm.fit1,newdata = test)
+tb1=table(pred,test$price)
+linear_error[i]=1-(tb1[1,1]+tb1[2,2]+tb1[3,3])/dim(test_scale)[1]
+}
+```
+
+```{r}
+svm.fit1
+```
+When cost = 10, the linear svm model has the smallest test error 0.040786. 
+
+
+Then, we choose the polynomial kernel and compare the test errors with different costs and a default degree 3. Why we choose 3? Because when we use
+```{r}
+poly_error=rep(0,5)
+for(j in 1:5){
+svm.fit2=svm(price~.,data=train,kernel='polynomial',cost=Cost[j],degree=3)
+pred2=predict(svm.fit2,newdata = test)
+tb2=table(pred2,test$price)
+poly_error[j]=1-(tb2[1,1]+tb2[2,2]+tb2[3,3])/dim(test)[1]
+}
+```
+
+```{r}
+svm.fit2
+```
+Thus, when cost=100,degree=3, the polynomial kernel svm model has the smallest test error 0.03948832.
+
+```{r}
+tb2
+
+```
+
+
+
+```{r}
+radial_error=rep(0,5)
+
+```
+
+
+
+```{r}
+for(i in 1:5){
+  svm.fit3=svm(price~.,data=train,kernel='radial',cost=Cost[i],gamma=3)
+  pred3=predict(svm.fit3,newdata = test)
+  tb3=table(pred3,test$price)
+  radial_error[i]=1-(tb3[1,1]+tb3[2,2]+tb3[3,3])/dim(test)[1]
+  }
+
+```
+
+```{r}
+radial_error1=rep(0,5)
+for(i in 1:5){
+  svm.fit3=svm(price~.,data=train,kernel='radial',cost=Cost[i],gamma=1)
+  pred3=predict(svm.fit3,newdata = test)
+  tb3=table(pred3,test$price)
+  radial_error1[i]=1-(tb3[1,1]+tb3[2,2]+tb3[3,3])/dim(test)[1]
+  }
+
+```
+
+```{r}
+radial_error
+```
+
+```{r}
+radial.fit=svm(price~.,data=train,kernel='radial',cost=1,gamma=1)
+```
+
+we can see when cost = 1 and gamma = 1, the kernel 'radial' has the smallest test error 0.03578050.
+
+Comparing with the three svm models, we choose to select the best model with radial kernel and cost = 1, gamma = 1.
+
+```{r}
+### choose a best model
+bestmod=svm(price~.,data=train,kernel='radial',cost=1,gamma=1)
+```
+
+```{r}
+pred = predict(bestmod, test)
+table(pred, test$price)
+```
+
+
+Then we rescale the data set and choose the parameter.
+
+```{r}
+which(pred!=test$price)
+```
+
+```{r}
+pred[53]
+
+```
+
+```{r}
+test[53,]
+
+```
+
+```{r}
+diamonds[165,]
+```
+
+```{r}
+train_scale=cbind.data.frame(scale(train[,-7]),price=train$price)
+test_scale=cbind.data.frame(scale(test[,-7]),price=test$price)
+```
+
+```{r}
+linear_error_scale=rep(0,5)
+for(i in 1:5){
+svm.fit1=svm(price~.,data=train_scale,kernel='linear',cost=Cost[i])
+pred=predict(svm.fit1,newdata = test_scale)
+tb4=table(pred,test_scale$price)
+linear_error_scale[i]=1-(tb4[1,1]+tb4[2,2]+tb4[3,3])/dim(test_scale)[1]
+}
+```
+
+```{r}
+linear_error_scale
+```
+
+
+
+```{r split data}
+set.seed(10)
+index1=sample(dim(diamonds)[1],0.8*dim(diamonds)[1],replace=F)
+train1=diamonds[index1,]
+test1=diamonds[-index1,]
+train_scale1=cbind.data.frame(scale(train1[,-7]),price=train1$price)
+test_scale1=cbind.data.frame(scale(test1[,-7]),price=test1$price)
+```
+
+```{r}
+svm.fit1.scale=svm(price~.,data=train_scale1,kernel='linear',cost=1)
+```
+
+
+```{r}
+pred_scale1=predict(svm.fit1.scale,newdata = train_scale1)
+```
+
+
+
+```{r}
+tb_scale1=table(pred_scale1,train_scale1$price)
+linear_error_scale_train=1-(tb_scale1[1,1]+tb_scale1[2,2]+tb_scale1[3,3])/dim(train_scale1)[1]
+linear_error_scale_train
+```
+
+```{r}
+pred_scale1_test=predict(svm.fit1.scale,newdata = test_scale1)
+tb_scale1=table(pred_scale1_test,test_scale1$price)
+linear_error_scale_test=1-(tb_scale1[1,1]+tb_scale1[2,2]+tb_scale1[3,3])/dim(test_scale1)[1]
+linear_error_scale_test
+```
+
+
+```{r}
+poly_error_scale=rep(0,5)
+for(i in 1:5){
+svm.fit5=svm(price~.,data=train_scale,kernel='polynomial',cost=Cost[i],degree=3)
+pred=predict(svm.fit5,newdata = test_scale)
+tb5=table(pred,test_scale$price)
+poly_error_scale[i]=1-(tb5[1,1]+tb5[2,2]+tb5[3,3])/dim(test_scale)[1]
+}
+```
+
+```{r}
+poly_error_scale
+
+```
+
+When cost = 10, degree = 3, it has the smallest test error 0.04115684.
+
+```{r}
+svm.fit2.scale=svm(price~.,data=train_scale1,kernel='polynomial',cost=10,degree=3)
+```
+
+```{r}
+pred_scale2=predict(svm.fit2.scale,newdata = train_scale1)
+tb_scale2=table(pred_scale2,train_scale1$price)
+poly_error_scale_train=1-(tb_scale2[1,1]+tb_scale2[2,2]+tb_scale2[3,3])/dim(train_scale1)[1]
+poly_error_scale_train
+```
+
+```{r}
+radial_error_scale=rep(0,5)
+for(i in 1:5){
+svm.fit6=svm(price~.,data=train_scale,kernel='radial',cost=Cost[i],gamma=1)
+pred=predict(svm.fit6,newdata = test_scale)
+tb6=table(pred,test_scale$price)
+radial_error_scale[i]=1-(tb6[1,1]+tb6[2,2]+tb6[3,3])/dim(test_scale)[1]
+}
+```
+
+```{r}
+radial_error_scale
+```
+When cost = 1, gamma = 1, testing error is 0.03559511.
+
+```{r}
+svm.fit3.scale=svm(price~.,data = train_scale,kernel='radial',cost=1,gamma=1)
+pred_scale3=predict(svm.fit3.scale,newdata = train_scale)
+tb_scale3=table(pred_scale3,train_scale$price)
+radial_error_scale_train=1-(tb_scale3[1,1]+tb_scale3[2,2]+tb_scale3[3,3])/dim(train_scale)[1]
+radial_error_scale_train
+```
+
+```{r}
+
+tb_scale3
+```
+
+
+```{r}
+radial_error_scale3=rep(0,5)
+for(i in 1:5){
+svm.fit7=svm(price~.,data=train_scale,kernel='radial',cost=Cost[i],gamma=3)
+pred=predict(svm.fit7,newdata = test_scale)
+tb7=table(pred,test_scale$price)
+radial_error_scale3[i]=1-(tb7[1,1]+tb7[2,2]+tb7[3,3])/dim(test_scale)[1]
+}
+```
+
+
+```{r}
+radial_error_scale3
+```
+
+```{r}
+linear_error_4c=rep(0,5)
+for(i in 1:5){
+svm.fit.linear.4c=svm(price~carat+cut+color+clarity,data=train_scale,kernel='linear',cost=Cost[i])
+pred=predict(svm.fit.linear.4c,newdata = test_scale)
+tb4c=table(pred,test_scale$price)
+linear_error_4c[i]=1-(tb4c[1,1]+tb4c[2,2]+tb4c[3,3])/dim(test)[1]
+}
+```
+
+```{r}
+linear_error_4c
+```
+
+```{r}
+svm.fit.linear.4c
+```
+
+```{r}
+pred_linear_4c=predict(svm.fit.linear.4c,newdata = train_scale)
+tb_linear_4c=table(pred_linear_4c,train_scale$price)
+linear_error_4c_train=1-(tb_linear_4c[1,1]+tb_linear_4c[2,2]+tb_linear_4c[3,3])/dim(train_scale)[1]
+linear_error_4c_train
+```
+
+```{r}
+poly_error_4c=rep(0,5)
+for(i in 1:5){
+svm.fit.poly.4c=svm(price~carat+cut+color+clarity,data=train_scale,kernel='poly',cost=Cost[i],degree=3)
+pred=predict(svm.fit.poly.4c,newdata = test_scale)
+tb4c.poly=table(pred,test$price)
+poly_error_4c[i]=1-(tb4c.poly[1,1]+tb4c.poly[2,2]+tb4c.poly[3,3])/dim(test)[1]
+}
+```
+
+```{r}
+svm.fit.poly.4c
+```
+
+cost = 10, degree = 3,has the smallest error 0.04245458
+
+```{r}
+pred_poly_4c=predict(svm.fit.poly.4c,newdata = train_scale)
+tb_poly_4c=table(pred_poly_4c,train_scale$price)
+poly_error_4c_train=1-(tb_poly_4c[1,1]+tb_poly_4c[2,2]+tb_poly_4c[3,3])/dim(train_scale)[1]
+poly_error_4c_train
+```
+
+
+```{r}
+radial_error_4c=rep(0,5)
+for(i in 1:5){
+svm.fit.radial.4c=svm(price~carat+cut+color+clarity,data=train_scale,kernel='radial',cost=Cost[i],gamma = 1)
+pred=predict(svm.fit.radial.4c,newdata = test_scale)
+tb4c.radial=table(pred,test$price)
+radial_error_4c[i]=1-(tb4c.radial[1,1]+tb4c.radial[2,2]+tb4c.radial[3,3])/dim(test)[1]
+}
+```
+
+```{r}
+radial_error_4c
+```
+
+When cost = 1, gamma = 1, svm model with radial kernel has the smallest testing error 0.0315165.
+
+```{r}
+radial_error_4c1=rep(0,5)
+for(i in 1:5){
+svm.fit.radial.4c1=svm(price~carat+cut+color+clarity,data=train_scale,kernel='radial',cost=Cost[i],gamma = 3)
+pred=predict(svm.fit.radial.4c1,newdata = test_scale)
+tb4c.radial1=table(pred,test$price)
+radial_error_4c1[i]=1-(tb4c.radial1[1,1]+tb4c.radial1[2,2]+tb4c.radial1[3,3])/dim(test)[1]
+}
+```
+
+```{r}
+radial_error_4c1
+```
+
+When cost = 10, gamma = 3, svm model with radial kernel has the smallest testing error 0.03244346.
+
+```{r}
+train_scale$price=as.character(train_scale$price)
+train_scale$price[which(train_scale$price==2)]='High'
+train_scale$price[which(train_scale$price==1)]='Median'
+train_scale$price[which(train_scale$price==0)]='Low'
+train_scale$price=as.factor(train_scale$price)
+```
+
+```{r}
+bestmod = svm(price~carat+cut+color+clarity,data=train_scale,kernel='radial',cost=1,gamma = 1)
+```
+
+```{r}
+bestmod_scale = svm(price~.,data=train_scale,kernel='radial',cost=1,gamma = 1)
+```
+
+```{r}
+best_pred_test = predict(bestmod,newdata = test_scale)
+```
+
+
+```{r}
+best_pred_train = predict(bestmod,newdata = train_scale)
+```
+
+```{r}
+f1_score_test_tb=table(best_pred_test,test_scale$price)
+f1_score_test_tb
+test_error = 1-(f1_score_test_tb[1,1]+f1_score_test_tb[2,2]+f1_score_test_tb[3,3])/dim(test_scale)[1]
+```
+
+```{r}
+test_error
+```
+
+```{r}
+f1_score_train_tb=table(best_pred_train,train_scale$price)
+f1_score_train_tb
+train_error = 1-(f1_score_train_tb[1,1]+f1_score_train_tb[2,2]+f1_score_train_tb[3,3])/dim(train_scale)[1]
+```
+
+```{r}
+write.csv(f1_score_train_tb,file = 'f1_score_train_tb.csv')
+```
+
+```{r}
+write.csv(f1_score_test_tb,file = 'f1_score_test_tb.csv')
+```
+
+```{r}
+diamond=read.csv('diamonds.csv')
+diamond$raw_price=diamond$price
+```
+
+```{r}
+train1=cbind.data.frame(raw_price=diamond[index,12],train)
+test1=cbind.data.frame(raw_price=diamond[-index,12],test)
+```
+
+```{r}
+test_mis=test1[which(best_pred_test!=test$price),]
+test_mis$price_pred=best_pred_test[which(best_pred_test!=test$price)]
+```
+
+```{r}
+train_mis=train1[which(best_pred_train!=train$price),]
+train_mis$price_pred=best_pred_train[which(best_pred_train!=train$price)]
+```
+
+```{r}
+write.csv(test_mis,file="svm_test.csv")
+```
+
+```{r}
+write.csv(train_mis,file="svm_train.csv")
+```
+
+```{r}
+pdf("train_error_price_plot.pdf") 
+ggplot(train_mis, aes(x=c(1:length(raw_price)),y=raw_price, color=price_pred)) + geom_point()+geom_hline(aes(yintercept=3500))+geom_hline(aes(yintercept=10000))
+dev.off()
+```
+
+```{r}
+pdf("test_error_price_plot.pdf") 
+ggplot(test_mis, aes(x=c(1:length(raw_price)),y=raw_price, color=price_pred)) + geom_point()+geom_hline(aes(yintercept=3500))+geom_hline(aes(yintercept=10000))
+dev.off()
+```
+
+```{r}
+jpeg('svm plot2.jpeg')
+color=c('lightblue1','darkblue','white')
+plot(bestmod, test_scale, carat ~ color, symbolPalette = color2,col=color)
+dev.off()
+```
+
+From the SVM classification plot above, we can see our hyperplane classify most data points in the test set correctly for the variable carat and cut. We can say that the performance of our SVM model is good.
+
+```{r}
+plot(bestmod, test_scale, clarity ~ depth , slice=list(carat=mean(test_scale$carat),color=mean(test_scale$cut),cut = mean(test_scale$cut),table=mean(test_scale$table),x=mean(test_scale$x),y=mean(test_scale$y),z=mean(test_scale$z)))
+```
+
+```{r}
+plot(bestmod, test_scale, carat ~ clarity,symbolPalette = rainbow(3),col=color)
+```
+
+```{r}
+plot(bestmod_scale, test_scale, carat ~ cut,symbolPalette = rainbow(3),col=color)
+```
+
+
+
+```{r}
+jpeg('svm plot1.jpeg')
+color2 = c('green','blue','red')
+plot(bestmod, test_scale, carat ~ clarity,symbolPalette = color2,col=color)
+dev.off()
+```
+
+```{r}
+plot(bestmod, test_scale, clarity ~ carat)
+```
+
+
+
+
+
+
+
